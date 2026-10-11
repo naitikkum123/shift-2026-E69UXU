@@ -1,11 +1,10 @@
 import React from 'react';
-import { PRESET_SCENARIOS } from '../data/presets';
-import { ScenarioPreset } from '../types/bms';
+import { ERICKSHAW_PRESETS, ERickshawPreset } from '../data/presets';
 import { ShieldAlert, Play, Square } from 'lucide-react';
 
 interface ScenarioBarProps {
   activePresetId: string | null;
-  onSelectPreset: (preset: ScenarioPreset) => void;
+  onSelectPreset: (preset: ERickshawPreset) => void;
   isInspecting: boolean;
   inspectionStepName: string | null;
   onToggleInspection: () => void;
@@ -39,7 +38,7 @@ export const ScenarioBar: React.FC<ScenarioBarProps> = ({
             ) : (
               <>
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Run Autonomous Inspection Scan</span>
+                <span>Run Autonomous Multi-Sensor Scan</span>
               </>
             )}
           </button>
@@ -47,7 +46,7 @@ export const ScenarioBar: React.FC<ScenarioBarProps> = ({
           {isInspecting && inspectionStepName && (
             <div className="flex items-center gap-2 text-xs font-mono text-amber-300 bg-amber-950/50 border border-amber-800/60 px-2.5 py-1 rounded">
               <ShieldAlert className="w-3.5 h-3.5 animate-bounce" />
-              <span>Diagnostic Phase: {inspectionStepName}</span>
+              <span>Inspection: {inspectionStepName}</span>
             </div>
           )}
         </div>
@@ -55,9 +54,9 @@ export const ScenarioBar: React.FC<ScenarioBarProps> = ({
         {/* Right: Manual Preset Scenario Injections */}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[11px] font-mono text-slate-400 mr-1 hidden sm:inline">
-            Direct Injections:
+            Direct Triggers:
           </span>
-          {PRESET_SCENARIOS.map((preset) => {
+          {ERICKSHAW_PRESETS.map((preset) => {
             const isSelected = activePresetId === preset.id;
             return (
               <button

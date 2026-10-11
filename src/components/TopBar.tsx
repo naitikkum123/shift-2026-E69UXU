@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Play, Pause, RotateCcw, Volume2, VolumeX, Bell } from 'lucide-react';
+import { Activity, Play, Pause, RotateCcw, Volume2, VolumeX, Bell, FileCode } from 'lucide-react';
 
 interface TopBarProps {
   isStreaming: boolean;
@@ -42,28 +42,36 @@ export const TopBar: React.FC<TopBarProps> = ({
           {/* Zone 2: 4-5 single-line clean text navigation links */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
             <button
-              onClick={() => onSelectTab('overview')}
+              onClick={() => onSelectTab('dashboard')}
               className={`hover:text-white transition-colors whitespace-nowrap shrink-0 py-1 ${
-                activeTab === 'overview' ? 'text-cyan-400 border-b-2 border-cyan-400' : ''
+                activeTab === 'dashboard' ? 'text-cyan-400 border-b-2 border-cyan-400' : ''
               }`}
             >
-              Telemetry Console
+              Smart Dashboard
             </button>
             <button
-              onClick={() => onSelectTab('rules')}
+              onClick={() => onSelectTab('charts')}
               className={`hover:text-white transition-colors whitespace-nowrap shrink-0 py-1 ${
-                activeTab === 'rules' ? 'text-cyan-400 border-b-2 border-cyan-400' : ''
+                activeTab === 'charts' ? 'text-cyan-400 border-b-2 border-cyan-400' : ''
               }`}
             >
-              Operational Rules
+              Live Telemetry Charts
             </button>
             <button
-              onClick={() => onSelectTab('hardware')}
+              onClick={() => onSelectTab('cabin')}
               className={`hover:text-white transition-colors whitespace-nowrap shrink-0 py-1 ${
-                activeTab === 'hardware' ? 'text-cyan-400 border-b-2 border-cyan-400' : ''
+                activeTab === 'cabin' ? 'text-cyan-400 border-b-2 border-cyan-400' : ''
               }`}
             >
-              Hardware Toggles
+              Cabin Occupancy (Rule 2)
+            </button>
+            <button
+              onClick={() => onSelectTab('battery')}
+              className={`hover:text-white transition-colors whitespace-nowrap shrink-0 py-1 ${
+                activeTab === 'battery' ? 'text-cyan-400 border-b-2 border-cyan-400' : ''
+              }`}
+            >
+              Lifeline & Health (Rule 5)
             </button>
             <button
               onClick={() => onSelectTab('json')}
@@ -71,15 +79,16 @@ export const TopBar: React.FC<TopBarProps> = ({
                 activeTab === 'json' ? 'text-cyan-400 border-b-2 border-cyan-400' : ''
               }`}
             >
-              JSON Output
+              Telemetry Output
             </button>
             <button
-              onClick={() => onSelectTab('chassis')}
-              className={`hover:text-white transition-colors whitespace-nowrap shrink-0 py-1 ${
-                activeTab === 'chassis' ? 'text-cyan-400 border-b-2 border-cyan-400' : ''
+              onClick={() => onSelectTab('code')}
+              className={`hover:text-white transition-colors whitespace-nowrap shrink-0 py-1 flex items-center gap-1.5 ${
+                activeTab === 'code' ? 'text-cyan-400 border-b-2 border-cyan-400 font-semibold' : ''
               }`}
             >
-              Pack Architecture
+              <FileCode className="w-3.5 h-3.5" />
+              <span>Arduino & Python Code</span>
             </button>
           </nav>
 
@@ -88,7 +97,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             {/* Alarm Sound Master Mute / Unmute */}
             <button
               onClick={onToggleAudioMute}
-              title={isAudioMuted ? 'Alarm Audio Muted (Click to enable sound)' : 'Alarm Audio Active (Click to mute)'}
+              title={isAudioMuted ? 'Alarms Muted (Click to enable audio)' : 'Alarms Armed (Click to mute)'}
               className={`p-2 rounded border transition-colors ${
                 isAudioMuted
                   ? 'bg-slate-900 text-slate-500 border-slate-800 hover:text-slate-300'
@@ -101,7 +110,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             {/* Test Alarm Sound Button */}
             <button
               onClick={onTestAlarm}
-              title="Test Piezo Alarm Sound"
+              title="Test Piezo Hardware Siren"
               className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-850 rounded border border-slate-800 transition-colors whitespace-nowrap shrink-0"
             >
               <Bell className="w-3.5 h-3.5 text-rose-400" />
@@ -134,7 +143,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               ) : (
                 <>
                   <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Stream</span>
+                  <span>Live Stream</span>
                 </>
               )}
             </button>

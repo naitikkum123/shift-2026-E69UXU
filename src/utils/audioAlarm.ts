@@ -1,9 +1,11 @@
 /**
- * Web Audio API synthesizer for AI-BMS vehicle audible alarm system.
- * Generates synthesized tones without external asset dependencies.
+ * Web Audio API synthesizer for E-Rickshaw Smart EV Controller alarms.
+ * Provides distinct hardware alarms for:
+ * 1. Thermal Overheat Protection (> 50°C): High-priority piercing siren
+ * 2. Passenger Overload Alert (> 6 passengers): Cabin driver chime
  */
 
-class BmsAudioAlarm {
+class ERickshawAudioAlarm {
   private ctx: AudioContext | null = null;
   private isMuted: boolean = false;
   private loopInterval: number | null = null;
@@ -18,7 +20,7 @@ class BmsAudioAlarm {
       if (AudioCtx) {
         this.ctx = new AudioCtx();
         this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+        this.masterGain.gain.setValueAtTime(0.55, this.ctx.currentTime);
         this.masterGain.connect(this.ctx.destination);
       }
     }
@@ -40,52 +42,37 @@ class BmsAudioAlarm {
   }
 
   /**
-   * Dual-pulse high-urgency piezo ring for CRITICAL hazards
-   * (Rule 1 Overheating, Rule 3 Deep Sleep Low Batt)
+   * 1. High-Priority Hardware Alarm: THERMAL OVERHEAT (> 50°C)
+   * Rapid aggressive frequency modulation piercing siren
    */
-  public playCriticalBurst() {
+  public playThermalOverheatBurst() {
     if (this.isMuted) return;
     const ctx = this.unlockAudio();
     if (!ctx) return;
 
     const now = ctx.currentTime;
-
-    // Pulse 1
-    this.createBeep(ctx, now, 1200, 1600, 0.12, 'sawtooth');
-    // Pulse 2
-    this.createBeep(ctx, now + 0.15, 1200, 1600, 0.12, 'sawtooth');
-    // Pulse 3
-    this.createBeep(ctx, now + 0.30, 1400, 1800, 0.15, 'sawtooth');
+    // Rapid oscillating siren burst (880Hz to 1600Hz)
+    this.createSweepBeep(ctx, now, 880, 1600, 0.15, 'sawtooth');
+    this.createSweepBeep(ctx, now + 0.16, 1600, 950, 0.15, 'sawtooth');
+    this.createSweepBeep(ctx, now + 0.32, 1000, 1800, 0.20, 'sawtooth');
   }
 
   /**
-   * Two-tone acoustic caution chime for WARNING states
-   * (Rule 2 Overloading / Abrasive Heat)
+   * 2. Cabin Alarm: PASSENGER OVERLOAD ALERT (> 6 passengers)
+   * Double acoustic horn/chime pattern inside cabin
    */
-  public playWarningBurst() {
+  public playCabinOverloadBurst() {
     if (this.isMuted) return;
     const ctx = this.unlockAudio();
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    this.createBeep(ctx, now, 750, 750, 0.14, 'sine');
-    this.createBeep(ctx, now + 0.16, 1050, 1050, 0.18, 'sine');
+    // Distinctive warning chime pair
+    this.createTone(ctx, now, 620, 0.18, 'triangle');
+    this.createTone(ctx, now + 0.22, 920, 0.24, 'triangle');
   }
 
-  /**
-   * High-pitch sonar chirp for SECURITY BEACON / BLUETOOTH HALT (Rule 4)
-   */
-  public playBeaconBurst() {
-    if (this.isMuted) return;
-    const ctx = this.unlockAudio();
-    if (!ctx) return;
-
-    const now = ctx.currentTime;
-    this.createBeep(ctx, now, 1850, 2400, 0.10, 'triangle');
-    this.createBeep(ctx, now + 0.14, 2100, 2600, 0.12, 'triangle');
-  }
-
-  private createBeep(
+  private createSweepBeep(
     ctx: AudioContext,
     startTime: number,
     startFreq: number,
@@ -99,13 +86,42 @@ class BmsAudioAlarm {
 
       osc.type = type;
       osc.frequency.setValueAtTime(startFreq, startTime);
-      if (startFreq !== endFreq) {
-        osc.frequency.exponentialRampToValueAtTime(endFreq, startTime + duration);
-      }
+      osc.frequency.exponentialRampToValueAtTime(endFreq, startTime + duration);
 
       gain.gain.setValueAtTime(0.001, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.45, startTime + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.3, startTime + duration * 0.7);
+      gain.gain.exponentialRampToValueAtTime(0.55, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.35, startTime + duration * 0.7);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(gain);
+      if (this.masterGain) {
+        gain.connect(this.masterGain);
+      } else {
+        gain.connect(ctx.destination);
+      }
+
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.02);
+    } catch {}
+  }
+
+  private createTone(
+    ctx: AudioContext,
+    startTime: number,
+    freq: number,
+    duration: number,
+    type: OscillatorType
+  ) {
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.48, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.3, startTime + duration * 0.75);
       gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
       osc.connect(gain);
@@ -121,34 +137,29 @@ class BmsAudioAlarm {
   }
 
   /**
-   * Starts an autonomous repeating alarm loop matching the severity mode
+   * Starts an autonomous repeating alarm loop matching the trigger
    */
-  public startAlarmLoop(type: 'CRITICAL' | 'WARNING' | 'BEACON') {
+  public startAlarmLoop(type: 'THERMAL' | 'OVERLOAD') {
     this.stopAlarm();
     if (this.isMuted) return;
 
-    // Immediately trigger first acoustic ring
-    if (type === 'BEACON') {
-      this.playBeaconBurst();
-    } else if (type === 'CRITICAL') {
-      this.playCriticalBurst();
+    if (type === 'THERMAL') {
+      this.playThermalOverheatBurst();
     } else {
-      this.playWarningBurst();
+      this.playCabinOverloadBurst();
     }
 
-    const intervalMs = type === 'BEACON' ? 650 : type === 'CRITICAL' ? 850 : 1400;
+    const intervalMs = type === 'THERMAL' ? 800 : 1200;
 
     this.loopInterval = window.setInterval(() => {
       if (this.isMuted) {
         this.stopAlarm();
         return;
       }
-      if (type === 'BEACON') {
-        this.playBeaconBurst();
-      } else if (type === 'CRITICAL') {
-        this.playCriticalBurst();
+      if (type === 'THERMAL') {
+        this.playThermalOverheatBurst();
       } else {
-        this.playWarningBurst();
+        this.playCabinOverloadBurst();
       }
     }, intervalMs);
   }
@@ -161,12 +172,12 @@ class BmsAudioAlarm {
   }
 }
 
-export const bmsAudioAlarm = new BmsAudioAlarm();
+export const erickshawAudioAlarm = new ERickshawAudioAlarm();
 
 // Register global user-gesture unlock listener
 if (typeof window !== 'undefined') {
   const unlock = () => {
-    bmsAudioAlarm.unlockAudio();
+    erickshawAudioAlarm.unlockAudio();
     window.removeEventListener('pointerdown', unlock);
     window.removeEventListener('keydown', unlock);
   };
